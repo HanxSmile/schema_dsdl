@@ -1,6 +1,19 @@
 from fields import *
 from jsonschema import validate, FormatChecker
 
+Label_ = LabelStruct(
+    uid=UniqueID,
+    name=Str,
+    color=List(Int),
+)
+
+coco_classdomain = ClassDomain(
+    name="coco",
+    label_type=Label_,
+    classes=["dog", "cat", "mouse"],
+    skeleton=[[1, 2], [2, 3]]
+)
+
 ImageMedia = Struct(
     image=Image,
     image_shape=ImageShape(mode="hw"),
@@ -13,7 +26,7 @@ ImageMedia = Struct(
 
 LocalObjectEntry = Struct(
     bbox=BBox,
-    category=Label(dom="test"),
+    category=Label(dom="coco"),
     pose=Str,
     truncated=Bool,
     difficult=Bool
@@ -24,11 +37,25 @@ ObjectDetectionSample = Struct(
     objects=List(ele_type=LocalObjectEntry)
 )
 
+
+schema = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "children": {"type": "array", "items": {"$ref": "#"}}
+    },
+    "required": ["name", "children"]
+}
+
+data = {"name": "bbb", "children": [{"name": "ccc", "children": []}]}
+
+
+validate(data, schema, format_checker=FormatChecker())
+
 if __name__ == '__main__':
     schema = ObjectDetectionSample
 
     print(schema)
-
 
     data = {
         "media": {

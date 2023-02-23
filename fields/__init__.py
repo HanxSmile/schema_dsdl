@@ -3,8 +3,9 @@ from .special import *
 from .generic import *
 from .unstructure import *
 from .struct_entry import *
+from .classdomain import ClassDomain
 
-__all__ = ["Struct"]
+__all__ = ["Struct", "ClassDomain"]
 
 _module = sys.modules[__name__]
 for k in dir():
