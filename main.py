@@ -1,15 +1,8 @@
 from fields import *
 from jsonschema import validate, FormatChecker
 
-Label_ = LabelStruct(
-    uid=UniqueID,
-    name=Str,
-    color=List(Int),
-)
-
 coco_classdomain = ClassDomain(
     name="coco",
-    label_type=Label_,
     classes=["dog", "cat", "mouse"],
     skeleton=[[1, 2], [2, 3]]
 )
@@ -37,7 +30,6 @@ ObjectDetectionSample = Struct(
     objects=List(ele_type=LocalObjectEntry)
 )
 
-
 schema = {
     "type": "object",
     "properties": {
@@ -48,7 +40,6 @@ schema = {
 }
 
 data = {"name": "bbb", "children": [{"name": "ccc", "children": []}]}
-
 
 validate(data, schema, format_checker=FormatChecker())
 
