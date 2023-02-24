@@ -12,6 +12,7 @@ from .text import Text
 from .rotate_box import RBBox
 from .shape import Shape, ImageShape
 from .uniqueid import UniqueID
+from .params_placeholder import PlaceHolder
 
 __all__ = [
     "BBox",
@@ -35,4 +36,5 @@ __all__ = [
     "Shape",
     "ImageShape",
     "UniqueID",
+    "PlaceHolder",
 ]

@@ -50,32 +50,4 @@ class DictField(BaseField):
     }
 
 
-class ListField(BaseField):
-    data_schema = {
-        "$id": "/generic/list",
-        "title": "ListField",
-        "description": "List field in dsdl.",
-        "type": "array",
-        "items": {}
-    }
 
-    args_schema = {
-        "type": "object",
-        "properties": {
-            "ele_type": {"type": "object"}
-        },
-        "minProperties": 1,
-        "maxProperties": 1,
-        "required": ["ele_type"]
-    }
-
-    @classmethod
-    def get_field(cls, **kwargs):
-        schema = deepcopy(cls.data_schema)
-        kwargs = deepcopy(kwargs)
-        cls.validate_schema(kwargs, cls.args_schema)
-        ele_type = kwargs["ele_type"]
-        if callable(ele_type):
-            ele_type = ele_type()
-        schema["items"] = ele_type
-        return schema

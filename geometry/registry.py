@@ -27,6 +27,9 @@ class Registry:
     def clear(self):
         self._map = {}
 
+    def names_contained(self):
+        return list(self._map.keys())
+
 
 GEOMETRY = Registry("geometry")
 STRUCT = Registry("struct")
