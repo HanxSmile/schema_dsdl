@@ -13,6 +13,12 @@ class BaseField:
     default_args = {}
     geometry_class = None
 
+    def __init__(self, **kwargs):
+        all_kwargs = deepcopy(self.default_args)
+        all_kwargs.update(kwargs)
+        self.validate_schema(all_kwargs, self.args_schema)
+        self.kwargs = kwargs
+
     @classmethod
     def get_field(cls, **kwargs):
         schema = deepcopy(cls.data_schema)
