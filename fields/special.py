@@ -1,8 +1,9 @@
-from .base_field import BaseField
-from geometry import Polygon as Polygon_, PolygonItem as PolygonItem_
+from .base_field import BaseField, BaseFieldWithDomain
+from datetime import date, time
+from geometry import LABEL
 
 
-class CoordField(BaseField):
+class Coord(BaseField):
     data_schema = {
         "$id": "/special/coord",
         "title": "CoordField",
@@ -16,7 +17,7 @@ class CoordField(BaseField):
     }
 
 
-class Coord3DField(BaseField):
+class Coord3D(BaseField):
     data_schema = {
         "$id": "/special/coord3d",
         "title": "Coord3DField",
@@ -30,7 +31,7 @@ class Coord3DField(BaseField):
     }
 
 
-class IntervalField(BaseField):
+class Interval(BaseField):
     data_schema = {  # 无法定义顺序
         "$id": "/special/interval",
         "title": "IntervalField",
@@ -43,8 +44,12 @@ class IntervalField(BaseField):
         "maxItems": 2,
     }
 
+    def additional_validate(self, value):
+        assert value[0] <= value[1]
+        return value
 
-class BBoxField(BaseField):
+
+class BBox(BaseField):
     data_schema = {
         "$id": "/special/bbox",
         "title": "BBoxField",
@@ -63,7 +68,7 @@ class BBoxField(BaseField):
     geometry_class = "BBox"
 
 
-class RotatedBBoxField(BaseField):
+class RotatedBBox(BaseField):
     default_args = {
         "mode": "xywht",
         "measure": "radian"
@@ -93,8 +98,52 @@ class RotatedBBoxField(BaseField):
         "required": ["measure", "mode"]
     }
 
+    all_schema = {
+        "type": "object",
+        "oneOf": [
+            {
+                "properties": {
+                    "args": {
+                        "type": "object",
+                        "properties": {
+                            "measure": {"enum": ["radian", "degree"]},
+                            "mode": {"enum": ["xywht"]}
+                        },
+                        "minProperties": 2,
+                        "maxProperties": 2,
+                        "required": ["measure", "mode"]
+                    },
+                    "value": {
+                        "type": "array",
+                        "minItems": 5,
+                        "maxItems": 5,
+                        "items": [{"type": "number"}, {"type": "number"}, {"type": "number", "minimum": 0},
+                                  {"type": "number", "minimum": 0}, {"type": "number"}]
+                    }
+                }
+            },
 
-class PolygonField(BaseField):
+            {
+                "properties": {
+                    "args": {"type": "object",
+                             "properties": {
+                                 "measure": {"enum": ["radian", "degree"]},
+                                 "mode": {"enum": ["xyxy"]}
+                             },
+                             "minProperties": 2,
+                             "maxProperties": 2,
+                             "required": ["measure", "mode"]},
+                    "value": {"type": "array", "minItems": 8, "maxItems": 8, "items": {"type": "number"}}
+                }
+            }
+        ],
+        "required": ["args", "value"]
+    }
+
+    geometry_class = "RBBox"
+
+
+class Polygon(BaseField):
     data_schema = {
         "$id": "/special/polygon",
         "title": "PolygonField",
@@ -111,37 +160,37 @@ class PolygonField(BaseField):
         }
     }
 
-    @classmethod
-    def validate(cls, value, **kwargs):
-        polygon_lst = []
-        for idx, points in enumerate(value):
-            polygon_lst.append(PolygonItem_(points))
-        return Polygon_(polygon_lst)
+    geometry_class = "Polygon"
 
 
-class LabelField(BaseField):
+class Label(BaseFieldWithDomain):
     data_schema = {
         "$id": "/special/label",
         "title": "LabelField",
         "description": "Label field in dsdl.",
         "type": ["string", "integer"]
     }
-    args_schema = {
-        "type": "object",
-        "properties": {
-            "dom": {"type": "string"}
-        },
-        "minProperties": 1,
-        "maxProperties": 1,
-        "required": ["dom"]
-    }
 
-    @classmethod
-    def validate(cls, value, **kwargs):
-        pass  # TODO
+    def load_value(self, value):
+        assert self.actural_dom is not None, "You should set namespace before validating."
+        domain, label_name = None, value
+        if (isinstance(value, int) or (isinstance(value, str) and "::" not in value)):
+            assert not isinstance(self.actural_dom, list) or \
+                   (isinstance(self.actural_dom, list) and len(self.actural_dom) == 1), \
+                "LabelField Error: there are more than 1 domains in the struct, " \
+                "you need to specify the label's class domain explicitly."
+            domain = self.actural_dom[0] if isinstance(self.actural_dom, list) else self.actural_dom
+            label_name = value
+        if isinstance(value, str) and "::" in value:
+            label_registry_name = value.replace("::", "__")
+            assert label_registry_name in LABEL, f"Label '{label_registry_name}' is not valid."
+            return LABEL.get(label_registry_name)
+
+        assert label_name in domain, f"LabelField Error: The label '{value}' is not valid."
+        return domain.get_label(label_name)
 
 
-class KeypointField(BaseField):
+class Keypoint(BaseFieldWithDomain):
     data_schema = {
         "$id": "/special/keypoint",
         "title": "KeypointField",
@@ -157,18 +206,19 @@ class KeypointField(BaseField):
         }
     }
 
-    args_schema = {
-        "type": "object",
-        "properties": {
-            "dom": {"type": "string"}
-        },
-        "minProperties": 1,
-        "maxProperties": 1,
-        "required": ["dom"]
-    }
+    geometry_class = "KeyPoints"
+
+    def additional_validate(self, value):
+        assert not isinstance(self.actural_dom, list), "You can only assign one class dom in KeypointField."
+        dom = self.actural_dom
+        assert len(dom) == len(value), \
+            "The number of points should be equal to the labels in class domain."
+        assert dom.get_attribute("skeleton") is not None, \
+            f"You should assign skeletons for class domain {dom.__name__}."
+        return value
 
 
-class TextField(BaseField):
+class Text(BaseField):
     data_schema = {
         "$id": "/special/text",
         "title": "TextField",
@@ -176,8 +226,10 @@ class TextField(BaseField):
         "type": "string"
     }
 
+    geometry_class = "Text"
 
-class ImageShapeField(BaseField):
+
+class ImageShape(BaseField):
     default_args = {"mode": "hw"}
 
     data_schema = {
@@ -200,22 +252,15 @@ class ImageShapeField(BaseField):
         "required": ["mode"]
     }
 
-
-class InstanceIDField(BaseField):
-    data_schema = {
-        "$id": "/special/instanceid",
-        "title": "TextField",
-        "description": "InstanceID field in dsdl.",
-        "type": "string"
-    }
+    geometry_class = "ImageShape"
 
 
-class UniqueIDField(BaseField):
+class UniqueID(BaseField):
     default_args = {"id_type": None}
     data_schema = {
         "$id": "/special/uniqueid",
         "title": "UniqueIDField",
-        "description": "InstanceID field in dsdl.",
+        "description": "UniqueID field in dsdl.",
         "type": "string"
     }
     args_schema = {
@@ -228,8 +273,21 @@ class UniqueIDField(BaseField):
         "required": ["id_type"]
     }
 
+    geometry_class = "UniqueID"
 
-class DateField(BaseField):
+
+class InstanceID(UniqueID):
+    default_args = {"id_type": "InstanceID"}
+
+    data_schema = {
+        "$id": "/special/instanceid",
+        "title": "InstanceIDField",
+        "description": "InstanceID field in dsdl.",
+        "type": "string"
+    }
+
+
+class Date(BaseField):
     data_schema = {
         "$id": "/special/date",
         "title": "DateField",
@@ -238,8 +296,10 @@ class DateField(BaseField):
         "format": "date"
     }
 
+    geometry_class = date.fromisoformat
 
-class TimeField(BaseField):
+
+class Time(BaseField):
     data_schema = {
         "$id": "/special/time",
         "title": "TimeField",
@@ -247,3 +307,5 @@ class TimeField(BaseField):
         "type": "string",
         "format": "time"
     }
+
+    geometry_class = time.fromisoformat

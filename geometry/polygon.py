@@ -53,8 +53,11 @@ class PolygonItem(BaseGeometry):
 
 class Polygon(BaseGeometry):
 
-    def __init__(self, polygons: List[PolygonItem]):
-        self._data = polygons
+    def __init__(self, value):
+        polygon_lst = []
+        for idx, points in enumerate(value):
+            polygon_lst.append(PolygonItem(points))
+        self._data = polygon_lst
 
     @property
     def polygons(self):
@@ -96,10 +99,6 @@ class Polygon(BaseGeometry):
 
     def __repr__(self):
         return str(self._data)
-
-    @property
-    def field_key(self):
-        return "Polygon"
 
 
 class RLEPolygon(BaseGeometry):

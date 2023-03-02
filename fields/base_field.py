@@ -1,8 +1,7 @@
 from copy import deepcopy
 from jsonschema import validate, FormatChecker
 from geometry import GEOMETRY, CLASSDOMAIN, PlaceHolder
-from .struct_entry import Struct
-from typing import Union, List
+from typing import Union, List as List_
 
 
 class BaseField:
@@ -11,6 +10,14 @@ class BaseField:
         "type": "object",
         "minProperties": 0,
         "maxProperties": 0,
+    }
+    all_schema = {
+        "type": "object",
+        "properties": {
+            "args": args_schema,
+            "value": data_schema
+        },
+        "required": ["args", "value"]
     }
     default_args = {}
     geometry_class = None
@@ -31,17 +38,28 @@ class BaseField:
         schema["dsdl_args"] = default_args
         return schema
 
+    def additional_validate(self, value):
+        return value
+
     @staticmethod
     def validate_schema(data, schema):
         validate(data, schema, format_checker=FormatChecker())
 
-    def validate(self, value):
-        self.validate_schema(value, self.data_schema)
+    def validate_all_schema(self, value):
+        all_data = {"value": value, "args": self.kwargs}
+        self.validate_schema(all_data, self.all_schema)
+        return self.additional_validate(value)
+
+    def load_value(self, value):
         if self.geometry_class is None:
             return value
-        if self.geometry_class.__class__.__name__ == "GeometryMeta":
+        if callable(self.geometry_class):
             return self.geometry_class(value, **self.kwargs)
         return GEOMETRY.get(self.geometry_class)(value, **self.kwargs)
+
+    def validate(self, value):
+        value = self.validate_all_schema(value)
+        return self.load_value(value)
 
     @classmethod
     def extract_key(cls):
@@ -50,7 +68,6 @@ class BaseField:
 
 
 class BaseFieldWithDomain(BaseField):
-
     _single_dom_schema = {"oneOf": [
         {"enum": CLASSDOMAIN.names_contained()},
         {"type": "string", "pattern": "^\$[a-zA-Z_]\w*$"}
@@ -70,31 +87,30 @@ class BaseFieldWithDomain(BaseField):
         "required": ["dom"]
     }
 
-
-
-    def __init__(self, dom: Union[str, List[str]], **kwargs):
+    def __init__(self, dom: Union[str, List_[str]], **kwargs):
         super().__init__(**kwargs)
         self.namespace = None
-        if isinstance(dom, list):
-            dom =
-        if dom.startswith(self.PLACEHOLDER_PREFIX):
-            self.dom = PlaceHolder(dom)
+        self.validate_schema(dom, self.dom_schema)
+        self.arg_dom = PlaceHolder(dom)
+        self.actural_dom = None
+
+    def set_namespace(self, struct_obj):
+        self.namespace = struct_obj
+        self.arg_dom.set_namespace(struct_obj)
+        actural_dom = self.arg_dom.validate()
+        if isinstance(actural_dom, list):
+            actural_dom = [CLASSDOMAIN.get(_) for _ in actural_dom]
         else:
-            self.validate_schema(data=dom, schema=self.dom_schema)
-            self.dom = dom
+            actural_dom = CLASSDOMAIN.get(actural_dom)
+        self.actural_dom = actural_dom
 
-    def set_namespace(self, struct: Struct):
-        self.namespace = struct
-
-    def validate(self, value):
-        if self.namespace is not None:
-
-        self.validate_schema(value, self.data_schema)
+    def load_value(self, value):
+        assert self.actural_dom is not None, "You should set namespace first."
         if self.geometry_class is None:
             return value
         if self.geometry_class.__class__.__name__ == "GeometryMeta":
-            return self.geometry_class(value, dom=self.dom, **self.kwargs)
-        return GEOMETRY.get(self.geometry_class)(value, dom=self.dom, **self.kwargs)
+            return self.geometry_class(value, dom=self.actural_dom, **self.kwargs)
+        return GEOMETRY.get(self.geometry_class)(value, dom=self.actural_dom, **self.kwargs)
 
 
 class List(BaseField):
@@ -111,27 +127,23 @@ class List(BaseField):
     args_schema = {
         "type": "object",
         "properties": {
-            "ele_type": {"type": "object"},
             "ordered": {"type": "boolean"}
         },
-        "minProperties": 2,
-        "maxProperties": 2,
+        "minProperties": 1,
+        "maxProperties": 1,
         "required": ["ordered"]
     }
 
-    def __init__(self, **kwargs):
-        all_kwargs = deepcopy(self.default_args)
-        all_kwargs.update(kwargs)
-        self.validate_schema(all_kwargs, self.args_schema)
-        self.kwargs = all_kwargs
+    def __init__(self, ele_type, **kwargs):
+        super().__init__(**kwargs)
+        self.ele_type = ele_type
+        self.namespace = None
 
-    @classmethod
-    def get_field(cls, **kwargs):
-        schema = deepcopy(cls.data_schema)
-        kwargs = deepcopy(kwargs)
-        cls.validate_schema(kwargs, cls.args_schema)
-        ele_type = kwargs["ele_type"]
-        if callable(ele_type):
-            ele_type = ele_type()
-        schema["items"] = ele_type
-        return schema
+    def set_namespace(self, struct_obj):
+        self.namespace = struct_obj
+        if hasattr(self.ele_type, "set_namespace"):
+            self.ele_type.set_namespace(struct_obj)
+
+    def validate(self, value):
+        res = [self.ele_type.validate(item) for item in value]
+        return res

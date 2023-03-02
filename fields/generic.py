@@ -1,8 +1,7 @@
 from .base_field import BaseField
-from copy import deepcopy
 
 
-class BoolField(BaseField):
+class Bool(BaseField):
     data_schema = {
         "$id": "/generic/boolean",
         "title": "BoolField",
@@ -12,9 +11,10 @@ class BoolField(BaseField):
             {"enum": [0, 1]}
         ]
     }
+    geometry_class = bool
 
 
-class IntField(BaseField):
+class Int(BaseField):
     data_schema = {
         "$id": "/generic/int",
         "title": "IntField",
@@ -23,7 +23,7 @@ class IntField(BaseField):
     }
 
 
-class NumField(BaseField):
+class Num(BaseField):
     data_schema = {
         "$id": "/generic/num",
         "title": "NumField",
@@ -32,7 +32,7 @@ class NumField(BaseField):
     }
 
 
-class StrField(BaseField):
+class Str(BaseField):
     data_schema = {
         "$id": "/generic/str",
         "title": "StrField",
@@ -41,13 +41,10 @@ class StrField(BaseField):
     }
 
 
-class DictField(BaseField):
+class Dict(BaseField):
     data_schema = {
         "$id": "/generic/dict",
         "title": "DictField",
         "description": "Dict field in dsdl.",
         "type": "object",
     }
-
-
-

@@ -1,9 +1,7 @@
-from .base_field import BaseField
+from .base_unstructured_field import UnstructuredObjectField, UnstructuredObjectFieldWithDomain
 
 
-class ImageField(BaseField):
-    default_args = {"reader": None}
-
+class Image(UnstructuredObjectField):
     data_schema = {
         "$id": "/unstructure/image",
         "title": "ImageField",
@@ -11,20 +9,10 @@ class ImageField(BaseField):
         "type": "string",
     }
 
-    args_schema = {
-        "type": "object",
-        "properties": {
-            "reader": {"type": ["string", "null"]}
-        },
-        "minProperties": 1,
-        "maxProperties": 1,
-        "required": ["reader"]
-    }
+    geometry_class = "Image"
 
 
-class LabelMapField(BaseField):
-    default_args = {"reader": None}
-
+class LabelMap(UnstructuredObjectFieldWithDomain):
     data_schema = {
         "$id": "/unstructure/labelmap",
         "title": "LabelMapField",
@@ -32,20 +20,14 @@ class LabelMapField(BaseField):
         "type": "string",
     }
 
-    args_schema = {
-        "type": "object",
-        "properties": {
-            "reader": {"type": ["string", "null"]}
-        },
-        "minProperties": 1,
-        "maxProperties": 1,
-        "required": ["reader"]
-    }
+    geometry_class = "SegmentationMap"
+
+    def additional_validate(self, value):
+        assert not isinstance(self.actural_dom, list), "You can only assign one class dom in LabelMapField."
+        return value
 
 
-class InstanceMapField(BaseField):
-    default_args = {"reader": None}
-
+class InstanceMap(UnstructuredObjectField):
     data_schema = {
         "$id": "/unstructure/instancemap",
         "title": "InstanceMapField",
@@ -53,12 +35,4 @@ class InstanceMapField(BaseField):
         "type": "string",
     }
 
-    args_schema = {
-        "type": "object",
-        "properties": {
-            "reader": {"type": ["string", "null"]}
-        },
-        "minProperties": 1,
-        "maxProperties": 1,
-        "required": ["reader"]
-    }
+    geometry_class = "InstanceMap"

@@ -7,9 +7,14 @@ from .utils import bytes_to_numpy
 
 class ImageMedia(BaseGeometry):
 
-    def __init__(self, location, file_reader):
-        self._loc = location
-        self._reader = file_reader
+    def __init__(self, value):
+        self._loc = value
+        self._reader = None
+        self.namespace = None
+
+    def set_namespace(self, struct_obj):
+        self.namespace = struct_obj
+        self._reader = struct_obj.file_reader
 
     @property
     def location(self):
@@ -19,7 +24,7 @@ class ImageMedia(BaseGeometry):
         """
         turn ImageMedia object to bytes
         """
-        return io.BytesIO(self._reader.read())
+        return io.BytesIO(self._reader.read(self._loc))
 
     def to_image(self):
         """
@@ -39,7 +44,3 @@ class ImageMedia(BaseGeometry):
 
     def __repr__(self):
         return f"path:{self.location}"
-
-    @property
-    def field_key(self):
-        return "Image"

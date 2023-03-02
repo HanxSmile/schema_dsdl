@@ -34,6 +34,7 @@ class Registry:
 GEOMETRY = Registry("geometry")
 STRUCT = Registry("struct")
 CLASSDOMAIN = Registry("class domain")
+FILEREADER = Registry("file reader")
 
 
 class LabelRegistry:

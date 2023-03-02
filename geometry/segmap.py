@@ -1,55 +1,22 @@
-from .base_geometry import BaseGeometry
-from .utils import bytes_to_numpy
-from exception import FileReadError
 import numpy as np
 from PIL import Image
-import io
 from .label import LabelList
 from .box import BBox
-from .class_domain import _LabelMapDefaultDomain
+from .media import ImageMedia
 
 
-class SegmentationMap(BaseGeometry):
+class SegmentationMap(ImageMedia):
     """
     A Geometry class for semantic segmentation map.
     """
 
-    def __init__(self, location, file_reader, dom):
-        self._loc = location
-        self._reader = file_reader
-        self._dom = dom
-        if self._dom is None:
-            self._dom = _LabelMapDefaultDomain
+    def __init__(self, value, dom):
+        super().__init__(value)
+        self._dom = dom[0]
 
     @property
     def class_domain(self):
         return self._dom
-
-    @property
-    def location(self):
-        return self._loc
-
-    def to_bytes(self):
-        """
-        turn SegmentationMap object to bytes
-        """
-        return io.BytesIO(self._reader.read())
-
-    def to_image(self):
-        """
-        turn SegmentationMap object to PIL.Image
-        """
-        try:
-            img = Image.open(self.to_bytes())
-        except Exception as e:
-            raise FileReadError(f"Failed to convert bytes to an array. {e}") from None
-        return img
-
-    def to_array(self):
-        """
-        turn SegmentationMap object to numpy.ndarray
-        """
-        return bytes_to_numpy(self.to_bytes())
 
     def visualize(self, image, palette, **kwargs):
         seg = self.to_array()
@@ -69,12 +36,5 @@ class SegmentationMap(BaseGeometry):
             color_seg[seg == category_id, :] = np.array(palette[category_name])
         overlay = Image.fromarray(color_seg).convert("RGBA")
         overlayed = Image.blend(image, overlay, 0.5)
-        LabelList(label_lst).visualize(image=overlayed, palette=palette, bbox={"temp": BBox(0, 0, 0, 0)})
+        LabelList(label_lst).visualize(image=overlayed, palette=palette, bbox={"temp": BBox([0, 0, 0, 0])})
         return overlayed
-
-    def __repr__(self):
-        return f"path:{self.location}, class domain: {self._dom.__name__}"
-
-    @property
-    def field_key(self):
-        return "LabelMap"
