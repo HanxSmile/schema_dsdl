@@ -1,57 +1,3 @@
-from geometry import ClassDomain
-from fields import *
-
-ClassDomain(
-    name="KeyPoint_person_ClassDom",
-    classes=["left_ankle", "left_ear", "left_elbow", "left_eye", "left_hip", "left_knee", "left_shoulder", "left_wrist",
-             "nose", "right_ankle", "right_ear", "right_elbow", "right_eye", "right_hip", "right_knee",
-             "right_shoulder", "right_wrist"],
-    skeleton=[
-        [16, 14],
-        [14, 12],
-        [17, 15],
-        [15, 13],
-        [12, 13],
-        [6, 12],
-        [7, 13],
-        [6, 7],
-        [6, 8],
-        [7, 9],
-        [8, 10],
-        [9, 11],
-        [2, 3],
-        [1, 2],
-        [1, 3],
-        [2, 4],
-        [3, 5],
-        [4, 6],
-        [5, 7]
-    ]
-)
-
-
-class KeyPointLocalObject(Struct):
-    __params__ = ["cdom0"]
-    __fields__ = {
-        "num_keypoints": Int(),
-        "keypoints": Keypoint(dom="$cdom0")
-    }
-
-    __optional__ = ["num_keypoints"]
-
-
-class KeyPointSample(Struct):
-    __params__ = ["cdom0"]
-    __fields__ = {
-        "media": Image(),
-        "source": Str(),
-        "type": Str(),
-        "height": Int(),
-        "width": Int(),
-        "annotations": List(ele_type=KeyPointLocalObject(cdom0="$cdom0"))
-    }
-
-
 data = {"media": "media/000000000000.jpg", "source": "val2017/000000210273.jpg", "type": "image", "height": 428,
         "width": 640,
         "annotations": [{"num_keypoints": 0,
@@ -158,6 +104,59 @@ data = {"media": "media/000000000000.jpg", "source": "val2017/000000210273.jpg",
                                        [0.0, 0.0, 0]]}]}
 
 from objectio import LocalFileReader
+from geometry import ClassDomain
+from fields import *
+
+ClassDomain(
+    name="KeyPoint_person_ClassDom",
+    classes=["left_ankle", "left_ear", "left_elbow", "left_eye", "left_hip", "left_knee", "left_shoulder", "left_wrist",
+             "nose", "right_ankle", "right_ear", "right_elbow", "right_eye", "right_hip", "right_knee",
+             "right_shoulder", "right_wrist"],
+    skeleton=[
+        [16, 14],
+        [14, 12],
+        [17, 15],
+        [15, 13],
+        [12, 13],
+        [6, 12],
+        [7, 13],
+        [6, 7],
+        [6, 8],
+        [7, 9],
+        [8, 10],
+        [9, 11],
+        [2, 3],
+        [1, 2],
+        [1, 3],
+        [2, 4],
+        [3, 5],
+        [4, 6],
+        [5, 7]
+    ]
+)
+
+
+class KeyPointLocalObject(Struct):
+    __params__ = ["cdom0"]
+    __fields__ = {
+        "num_keypoints": Int(),
+        "keypoints": Keypoint(dom="$cdom0")
+    }
+
+    __optional__ = ["num_keypoints"]
+
+
+class KeyPointSample(Struct):
+    __params__ = ["cdom0"]
+    __fields__ = {
+        "media": Image(),
+        "source": Str(),
+        "type": Str(),
+        "height": Int(),
+        "width": Int(),
+        "annotations": List(ele_type=KeyPointLocalObject(cdom0="$cdom0"))
+    }
+
 
 reader = LocalFileReader(working_dir="the/media/dir")
 
@@ -167,3 +166,5 @@ sample_type.set_lazy_init(True)
 sample = sample_type(data)
 print(sample_type._FLATTEN_STRUCT)
 print(sample.annotations[0].num_keypoints)
+print(sample.extract_field_info(["image"]))
+print(sample.extract_path_info("./*/*/*keypoints", verbose=True))
