@@ -98,68 +98,80 @@ class StructMetaclass(type):
         parents = [b for b in bases if isinstance(b, StructMetaclass)]
         if not parents:
             return super_new(mcs, name, bases, attributes)
-        _fields = attributes.pop("__fields__ ", {})
-        _required_fields_name = attributes.pop("__optional__", [])
-        optional = dict()
-        required = dict()
-        mappings = dict()
-        struct_mappings = dict()
+        _fields = attributes.pop("__fields__", {})
+        _optional_fields_name = attributes.pop("__optional__", [])
+        param_names = attributes.pop("__params__", [])
+        all_fields = dict()
+        optional = []
+        for k, v in _fields.items():
+            if isinstance(v, (BaseField, Struct)):
+                all_fields[k] = v
+                if k in _optional_fields_name:
+                    optional.append(k)
 
-        for k, v in _fields:
-            if isinstance(v, BaseField):
-                mappings[k] = v
-                if k in required:
-                    required[k] = v
-                else:
-                    optional[k] = v
-            elif isinstance(v, Struct):
-                struct_mappings[k] = v
+        attributes["__fields__"] = all_fields
+        attributes["__optional__"] = optional
+        attributes["__params__"] = param_names
+
+        new_class = super_new(mcs, name, bases, attributes)
+        STRUCT.register(name, new_class)
+        return new_class
+
+
+class Struct(object, metaclass=StructMetaclass):
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._rewrite_class_attr()
+        self._FLATTEN_STRUCT = None
+        self._REGISTER_PATTERN = RegisterPattern()
+        self.file_reader = None
+        self.namespace = None
+        self.lazy_init = False
+        self.params = dict()
+        for k, v in kwargs.items():
+            assert k in self.__class__.__params__, f"Invalid arguments '{k}'"
+            self.params[k] = PlaceHolder(v)
+        self._register_namespace()
+        self.init_pattern_register()
+
+    def get_struct_mapping(self):
+        return self.__struct_mappings__
+
+    def get_mapping(self):
+        return self.__mappings__
+
+    def _rewrite_class_attr(self):
+        _fields = self.__class__.__fields__
+        _optional_fields_name = getattr(self, "__optional__", [])
 
         required = dict()  # 所有必须填写的field对象
         optional = dict()  # 所有可不填写的field对象
         mappings = dict()  # 所有的field对象
         struct_mappings = dict()  # 所有的Struct对象
 
-        attributes["__required__"] = required
-        attributes["__optional__"] = optional
-        attributes["__mappings__"] = mappings
-        attributes["__struct_mappings__"] = struct_mappings
+        for k, v in _fields.items():
+            v = deepcopy(v)
+            if isinstance(v, BaseField):
+                mappings[k] = v
+                if k in _optional_fields_name:
+                    optional[k] = v
+                else:
+                    required[k] = v
+            elif isinstance(v, Struct):
+                struct_mappings[k] = v
 
-        new_class = super_new(mcs, name, bases, attributes)
-        STRUCT.register(name, new_class)
-
-        return new_class
-
-    def get_struct_mapping(cls):
-        return cls.__struct_mappings__
-
-    def get_mapping(cls):
-        return cls.__mappings__
-
-
-class Struct(object, metaclass=StructMetaclass):
-    _FLATTEN_STRUCT = None
-    _REGISTER_PATTERN = RegisterPattern()
-
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.file_reader = None
-        self.namespace = None
-        self.lazy_init = False
-        self.params = dict()
-        for k, v in kwargs.items():
-            assert k in self.__params__, f"Invalid arguments '{k}'"
-            self.params[k] = PlaceHolder(v)
-        self._register_namespace()
-        self.init_pattern_register()
+        self.__required__ = required
+        self.__optional__ = optional
+        self.__mappings__ = mappings
+        self.__struct_mappings__ = struct_mappings
 
     def _register_namespace(self):
-        for sub_struct in self.__struct_mappings__:
+        for sub_struct in self.__struct_mappings__.values():
             sub_struct.set_namespace(self)
-        for field in self.__mappings__:
-            if not hasattr(field, "set_namespace"):
-                continue
-            field.set_namespace(self)
+        for field in self.__mappings__.values():
+            if hasattr(field, "set_namespace"):
+                field.set_namespace(self)
 
     def set_lazy_init(self, flag):
         self.lazy_init = flag
@@ -180,13 +192,12 @@ class Struct(object, metaclass=StructMetaclass):
     def validate(self, value):
         return self(value)
 
-    @classmethod
-    def _flatten_struct(cls):
+    def _flatten_struct(self):
         prefix = "."
         res_dic = dict()
         res_dic["$field_mapping"] = dict()
-        field_mappings = cls.get_mapping()
-        struct_mappings = cls.get_struct_mapping()
+        field_mappings = self.get_mapping()
+        struct_mappings = self.get_struct_mapping()
 
         def _helper(item, pre_path, key_name, flatten_dic):
             if isinstance(item, BaseField):
@@ -215,33 +226,27 @@ class Struct(object, metaclass=StructMetaclass):
 
         return res_dic
 
-    @classmethod
-    def register_path_for_extract(cls, pattern):
-        cls.init_pattern_register()
-        if not cls._REGISTER_PATTERN.has_registered(pattern):
-            cls._REGISTER_PATTERN.register_pattern(pattern)
+    def register_path_for_extract(self, pattern):
+        self.init_pattern_register()
+        if not self._REGISTER_PATTERN.has_registered(pattern):
+            self._REGISTER_PATTERN.register_pattern(pattern)
 
-    @classmethod
-    def init_pattern_register(cls):
-        if getattr(cls, "_FLATTEN_STRUCT", None) is None:
-            cls._FLATTEN_STRUCT = cls._flatten_struct()
-            cls._REGISTER_PATTERN.set_flatten_struct(cls._FLATTEN_STRUCT)
+    def init_pattern_register(self):
+        if self._FLATTEN_STRUCT is None:
+            self._FLATTEN_STRUCT = self._flatten_struct()
+            self._REGISTER_PATTERN.set_flatten_struct(self._FLATTEN_STRUCT)
 
     def __call__(self, value):
         return StructObject(self, **value)
-
-    def __new__(cls, *args, **kwargs):
-        instance = super().__new__(cls)
-        return deepcopy(instance)
 
 
 class StructObject(dict):
 
     def __init__(self, struct_obj, **kwargs):
         super().__init__()
-        self.namespace = struct_obj
-        self._raw_dict = kwargs
-        self.lazy_init = struct_obj.lazy_init
+        self['namespace'] = struct_obj
+        self["lazy_init"] = struct_obj.lazy_init
+        self['_raw_dict'] = kwargs
 
         if not self.lazy_init:
             self.setup()
@@ -256,7 +261,7 @@ class StructObject(dict):
         for k in self.namespace.__optional__:
             if k in kwargs:
                 setattr(self, k, kwargs[k])
-        for k in self.__struct_mappings__:
+        for k in self.namespace.get_struct_mapping():
             if k not in kwargs:
                 FieldNotFoundWarning(f"Required struct instance {k} is missing.")
                 continue
@@ -282,17 +287,18 @@ class StructObject(dict):
                 return value
 
     def __setattr__(self, key, value):
-
-        if key in self.namespace.__mappings__:  # field
-            field_obj = self.namespace.__mappings__[key]
+        all_mappings = self.namespace.get_mapping()
+        all_struct_mappings = self.namespace.get_struct_mapping()
+        if key in all_mappings:  # field
+            field_obj = all_mappings[key]
             try:
                 geometry_obj = field_obj.validate(value)
             except ValidationError as error:
                 raise ValidationError(f"Field '{key}' validation error: {error}.")
             self[key] = geometry_obj
 
-        elif key in self.namespace.__struct_mappings__:  # struct
-            struct_cls = self.namespace.__struct_mappings__[key]
+        elif key in all_struct_mappings:  # struct
+            struct_cls = all_struct_mappings[key]
             if not isinstance(value, dict):
                 raise ValidationError(
                     f"Struct validation error: {struct_cls.__class__.__name__} requires a dict to initiate, "

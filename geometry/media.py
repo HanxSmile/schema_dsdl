@@ -1,15 +1,15 @@
 import io
-from PIL import Image
+from PIL import Image as Image_
 from exception import FileReadError
 from .base_geometry import BaseGeometry
 from .utils import bytes_to_numpy
 
 
-class ImageMedia(BaseGeometry):
+class Image(BaseGeometry):
 
-    def __init__(self, value):
+    def __init__(self, value, file_reader):
         self._loc = value
-        self._reader = None
+        self._reader = file_reader
         self.namespace = None
 
     def set_namespace(self, struct_obj):
@@ -31,7 +31,7 @@ class ImageMedia(BaseGeometry):
         turn ImageMedia object to PIL.Image
         """
         try:
-            img = Image.open(self.to_bytes())
+            img = Image_.open(self.to_bytes())
         except Exception as e:
             raise FileReadError(f"Failed to convert bytes to an array. {e}") from None
         return img

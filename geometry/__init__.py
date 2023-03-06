@@ -1,6 +1,6 @@
 from .box import BBox
 from .label import Label, LabelList
-from .media import ImageMedia
+from .media import Image
 from .polygon import Polygon, PolygonItem
 from .segmap import SegmentationMap
 from .insmap import InstanceMap
@@ -17,7 +17,7 @@ __all__ = [
     "BBox",
     "Label",
     "Text",
-    "ImageMedia",
+    "Image",
     "LabelList",
     "Polygon",
     "PolygonItem",

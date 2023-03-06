@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Union, List
 
 
 class PlaceHolderItem:
@@ -22,7 +22,7 @@ class PlaceHolderItem:
 
 
 class PlaceHolder:
-    def __init__(self, value: Optional[str, List[str]]):
+    def __init__(self, value: Union[str, List[str]]):
         if isinstance(value, list):
             self.value = [PlaceHolderItem(_) for _ in value]
         else:

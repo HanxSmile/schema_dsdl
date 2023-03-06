@@ -1,18 +1,21 @@
 import numpy as np
-from PIL import Image
+from PIL import Image as Image_
 from .label import LabelList
 from .box import BBox
-from .media import ImageMedia
+from .media import Image
 
 
-class SegmentationMap(ImageMedia):
+class SegmentationMap(Image):
     """
     A Geometry class for semantic segmentation map.
     """
 
-    def __init__(self, value, dom):
-        super().__init__(value)
-        self._dom = dom[0]
+    def __init__(self, value, dom, file_reader):
+        super().__init__(value, file_reader)
+        if isinstance(dom, list):
+            assert len(dom) == 1, "You can only assign one class dom in LabelMapField."
+            dom = dom[0]
+        self._dom = dom
 
     @property
     def class_domain(self):
@@ -34,7 +37,7 @@ class SegmentationMap(ImageMedia):
                 palette[category_name] = tuple(np.random.randint(0, 255, size=[3]))
             label_lst.append(label)
             color_seg[seg == category_id, :] = np.array(palette[category_name])
-        overlay = Image.fromarray(color_seg).convert("RGBA")
-        overlayed = Image.blend(image, overlay, 0.5)
+        overlay = Image_.fromarray(color_seg).convert("RGBA")
+        overlayed = Image_.blend(image, overlay, 0.5)
         LabelList(label_lst).visualize(image=overlayed, palette=palette, bbox={"temp": BBox([0, 0, 0, 0])})
         return overlayed

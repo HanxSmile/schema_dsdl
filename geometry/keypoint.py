@@ -4,7 +4,7 @@ from .base_geometry import BaseGeometry
 from exception import ClassNotFoundError
 from PIL import ImageDraw
 import numpy as np
-from typing import List
+from typing import List, Union
 
 
 class Coord2D(BaseGeometry):
@@ -49,10 +49,11 @@ class Coord2D(BaseGeometry):
 
 
 class KeyPoints(BaseGeometry):
-    def __init__(self, value, dom: List[ClassDomainMeta]):
-        assert len(dom) == 1
+    def __init__(self, value, dom: Union[List[ClassDomainMeta], ClassDomainMeta]):
+        if isinstance(dom, list):
+            assert len(dom) == 1, "You can only assign one class dom in KeypointField."
+            dom = dom[0]
         keypoints = []
-        dom = dom[0]
         for class_ind, p in enumerate(value, start=1):
             label = dom.get_label(class_ind)
             coord2d = Coord2D(x=p[0], y=p[1], visiable=int(p[2]), label=label)

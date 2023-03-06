@@ -1,10 +1,10 @@
-from PIL import Image
+from PIL import Image as Image_
 import numpy as np
 import cv2
-from .media import ImageMedia
+from .media import Image
 
 
-class InstanceMap(ImageMedia):
+class InstanceMap(Image):
     """
     A Geometry class for instance segmentation map
     """
@@ -22,6 +22,6 @@ class InstanceMap(ImageMedia):
             _, contours, _ = cv2.findContours(this_map, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             cv2.drawContours(color_map, contours, -1, contour_color, 2)
 
-        overlay = Image.fromarray(color_map).convert("RGBA")
-        overlayed = Image.blend(image, overlay, 0.5)
+        overlay = Image_.fromarray(color_map).convert("RGBA")
+        overlayed = Image_.blend(image, overlay, 0.5)
         return overlayed

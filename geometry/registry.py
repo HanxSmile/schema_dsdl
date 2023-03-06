@@ -5,7 +5,8 @@ from warning import ClassHasDefinedWarning
 class Registry:
     def __init__(self, name):
         self._name = name
-        self._map = {}
+        self._map = dict()
+        self._names_contained = []
 
     @property
     def name(self):
@@ -17,6 +18,8 @@ class Registry:
         if name in self._map:
             # raise ClassHasDefinedError
             ClassHasDefinedWarning(f"Class '{name}' has been registered, it will be replaced by this updated one.")
+        else:
+            self._names_contained.append(name)
         self._map[name] = cls
 
     def get(self, name):
@@ -28,7 +31,7 @@ class Registry:
         self._map = {}
 
     def names_contained(self):
-        return list(self._map.keys())
+        return self._names_contained
 
 
 GEOMETRY = Registry("geometry")

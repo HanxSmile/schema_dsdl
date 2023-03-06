@@ -98,7 +98,7 @@ class RotatedBBox(BaseField):
         "required": ["measure", "mode"]
     }
 
-    all_schema = {
+    whole_schema = {
         "type": "object",
         "oneOf": [
             {
@@ -209,8 +209,10 @@ class Keypoint(BaseFieldWithDomain):
     geometry_class = "KeyPoints"
 
     def additional_validate(self, value):
-        assert not isinstance(self.actural_dom, list), "You can only assign one class dom in KeypointField."
         dom = self.actural_dom
+        if isinstance(self.actural_dom, list):
+            assert len(self.actural_dom) == 1, "You can only assign one class dom in KeypointField."
+            dom = self.actural_dom[0]
         assert len(dom) == len(value), \
             "The number of points should be equal to the labels in class domain."
         assert dom.get_attribute("skeleton") is not None, \

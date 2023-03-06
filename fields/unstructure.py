@@ -23,7 +23,8 @@ class LabelMap(UnstructuredObjectFieldWithDomain):
     geometry_class = "SegmentationMap"
 
     def additional_validate(self, value):
-        assert not isinstance(self.actural_dom, list), "You can only assign one class dom in LabelMapField."
+        if isinstance(self.actural_dom, list):
+            assert len(self.actural_dom) == 1, "You can only assign one class dom in LabelMapField."
         return value
 
 

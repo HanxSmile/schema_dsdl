@@ -2,6 +2,7 @@ from .special import *
 from .generic import *
 from .unstructure import *
 from .struct import *
+from .base_field import List
 
 __special_fields__ = [
     "Coord",

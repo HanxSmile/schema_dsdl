@@ -11,14 +11,6 @@ class BaseField:
         "minProperties": 0,
         "maxProperties": 0,
     }
-    all_schema = {
-        "type": "object",
-        "properties": {
-            "args": args_schema,
-            "value": data_schema
-        },
-        "required": ["args", "value"]
-    }
     default_args = {}
     geometry_class = None
 
@@ -40,6 +32,19 @@ class BaseField:
 
     def additional_validate(self, value):
         return value
+
+    @property
+    def all_schema(self):
+        default_all_schema = getattr(self.__class__, "whole_schema", None)
+        all_schema = {
+            "type": "object",
+            "properties": {
+                "args": self.args_schema,
+                "value": self.data_schema
+            },
+            "required": ["args", "value"]
+        }
+        return default_all_schema or all_schema
 
     @staticmethod
     def validate_schema(data, schema):
@@ -90,19 +95,26 @@ class BaseFieldWithDomain(BaseField):
     def __init__(self, dom: Union[str, List_[str]], **kwargs):
         super().__init__(**kwargs)
         self.namespace = None
-        self.validate_schema(dom, self.dom_schema)
+        self.validate_schema({"dom": dom}, self.dom_schema)
         self.arg_dom = PlaceHolder(dom)
         self.actural_dom = None
 
     def set_namespace(self, struct_obj):
         self.namespace = struct_obj
         self.arg_dom.set_namespace(struct_obj)
+
+    def get_actural_dom(self):
         actural_dom = self.arg_dom.validate()
         if isinstance(actural_dom, list):
             actural_dom = [CLASSDOMAIN.get(_) for _ in actural_dom]
         else:
             actural_dom = CLASSDOMAIN.get(actural_dom)
         self.actural_dom = actural_dom
+
+    def validate(self, value):
+        self.get_actural_dom()
+        value = self.validate_all_schema(value)
+        return self.load_value(value)
 
     def load_value(self, value):
         assert self.actural_dom is not None, "You should set namespace first."
