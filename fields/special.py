@@ -173,7 +173,6 @@ class Label(BaseFieldWithDomain):
 
     def load_value(self, value):
         assert self.actural_dom is not None, "You should set namespace before validating."
-        domain, label_name = None, value
         if (isinstance(value, int) or (isinstance(value, str) and "::" not in value)):
             assert not isinstance(self.actural_dom, list) or \
                    (isinstance(self.actural_dom, list) and len(self.actural_dom) == 1), \
@@ -181,13 +180,11 @@ class Label(BaseFieldWithDomain):
                 "you need to specify the label's class domain explicitly."
             domain = self.actural_dom[0] if isinstance(self.actural_dom, list) else self.actural_dom
             label_name = value
+            return domain.get_label(label_name)
         if isinstance(value, str) and "::" in value:
             label_registry_name = value.replace("::", "__")
             assert label_registry_name in LABEL, f"Label '{label_registry_name}' is not valid."
             return LABEL.get(label_registry_name)
-
-        assert label_name in domain, f"LabelField Error: The label '{value}' is not valid."
-        return domain.get_label(label_name)
 
 
 class Keypoint(BaseFieldWithDomain):

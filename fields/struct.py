@@ -303,7 +303,7 @@ class StructObject(dict):
                 raise ValidationError(
                     f"Struct validation error: {struct_cls.__class__.__name__} requires a dict to initiate, "
                     f"but got '{value}'.")
-            struct_obj = struct_cls(**value)
+            struct_obj = struct_cls(value)
             self[key] = struct_obj
         else:
             self[key] = value

@@ -101,7 +101,10 @@ data = {"media": "media/000000000000.jpg", "source": "val2017/000000210273.jpg",
                                        [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
                                        [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
                                        [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
-                                       [0.0, 0.0, 0]]}]}
+                                       [0.0, 0.0, 0]]}],
+        "object": {
+            "bounding_box": [9, 10, 11, 12], "label": 12}
+        }
 
 from objectio import LocalFileReader
 from geometry import ClassDomain
@@ -146,6 +149,14 @@ class KeyPointLocalObject(Struct):
     __optional__ = ["num_keypoints"]
 
 
+class SingleObject(Struct):
+    __params__ = ["domain"]
+    __fields__ = {
+        "bounding_box": BBox(),
+        "label": Label(dom="$domain")
+    }
+
+
 class KeyPointSample(Struct):
     __params__ = ["cdom0"]
     __fields__ = {
@@ -154,17 +165,25 @@ class KeyPointSample(Struct):
         "type": Str(),
         "height": Int(),
         "width": Int(),
-        "annotations": List(ele_type=KeyPointLocalObject(cdom0="$cdom0"))
+        "annotations": List(ele_type=KeyPointLocalObject(cdom0="$cdom0")),
+        "object": SingleObject(domain="$cdom0")
     }
 
 
+## generate instance
 reader = LocalFileReader(working_dir="the/media/dir")
 
 sample_type = KeyPointSample(cdom0="KeyPoint_person_ClassDom")
 sample_type.set_file_reader(reader)
-sample_type.set_lazy_init(True)
+# sample_type.set_lazy_init(True)
 sample = sample_type(data)
-print(sample_type._FLATTEN_STRUCT)
+
+### test
+
+# print(sample_type._FLATTEN_STRUCT)
 print(sample.annotations[0].num_keypoints)
 print(sample.extract_field_info(["image"]))
 print(sample.extract_path_info("./*/*/*keypoints", verbose=True))
+print(sample.object.label)
+print(sample.object.bounding_box)
+print(sample.extract_field_info(["BBox"]))
