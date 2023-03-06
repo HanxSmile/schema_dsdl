@@ -1,138 +1,169 @@
+from geometry import ClassDomain
 from fields import *
-from jsonschema import validate, FormatChecker
 
-coco_classdomain = ClassDomain(
-    name="coco",
-    classes=["dog", "cat", "mouse"],
-    skeleton=[[1, 2], [2, 3]]
+ClassDomain(
+    name="KeyPoint_person_ClassDom",
+    classes=["left_ankle", "left_ear", "left_elbow", "left_eye", "left_hip", "left_knee", "left_shoulder", "left_wrist",
+             "nose", "right_ankle", "right_ear", "right_elbow", "right_eye", "right_hip", "right_knee",
+             "right_shoulder", "right_wrist"],
+    skeleton=[
+        [16, 14],
+        [14, 12],
+        [17, 15],
+        [15, 13],
+        [12, 13],
+        [6, 12],
+        [7, 13],
+        [6, 7],
+        [6, 8],
+        [7, 9],
+        [8, 10],
+        [9, 11],
+        [2, 3],
+        [1, 2],
+        [1, 3],
+        [2, 4],
+        [3, 5],
+        [4, 6],
+        [5, 7]
+    ]
 )
 
-ImageMedia = Struct(
-    image=Image,
-    image_shape=ImageShape(mode="hw"),
-    depth=Int,
-    folder=Str,
-    source=Dict,
-    owner=Dict,
-    segmented=Bool
-)
 
-LocalObjectEntry = Struct(
-    bbox=BBox,
-    category=Label(dom="coco"),
-    pose=Str,
-    truncated=Bool,
-    difficult=Bool
-)
-
-ObjectDetectionSample = Struct(
-    media=ImageMedia,
-    objects=List(ele_type=LocalObjectEntry)
-)
-
-schema = {
-    "type": "object",
-    "properties": {
-        "name": {"type": "string"},
-        "children": {"type": "array", "items": {"$ref": "#"}}
-    },
-    "required": ["name", "children"]
-}
-
-data = {"name": "bbb", "children": [{"name": "ccc", "children": []}]}
-
-validate(data, schema, format_checker=FormatChecker())
-
-if __name__ == '__main__':
-    schema = ObjectDetectionSample
-
-    print(schema)
-
-    data = {
-        "media": {
-            "image": "JPEGImages/007762.jpg",
-            "image_shape": [
-                375,
-                500
-            ],
-            "folder": "VOC2007",
-            "source": {
-                "database": "The VOC2007 Database",
-                "annotation": "PASCAL VOC2007",
-                "image": "flickr",
-                "flickrid": [
-                    "22574264"
-                ]
-            },
-            "depth": 3,
-            "segmented": 0,
-            "owner": {
-                "flickrid": "the food pornographer",
-                "name": "the food pornographer"
-            }
-        },
-        "objects": [
-            {
-                "bbox": [
-                    217.0,
-                    90.0,
-                    145.0,
-                    162.0
-                ],
-                "category": "tvmonitor",
-                "pose": "Frontal",
-                "truncated": 1,
-                "difficult": 0
-            },
-            {
-                "bbox": [
-                    252.0,
-                    29.0,
-                    20.0,
-                    60.0
-                ],
-                "category": "bottle",
-                "pose": "Unspecified",
-                "truncated": 0,
-                "difficult": 0
-            },
-            {
-                "bbox": [
-                    292.0,
-                    32.0,
-                    19.0,
-                    39.0
-                ],
-                "category": "bottle",
-                "pose": "Unspecified",
-                "truncated": 1,
-                "difficult": 0
-            },
-            {
-                "bbox": [
-                    58.0,
-                    330.0,
-                    209.0,
-                    45.0
-                ],
-                "category": "chair",
-                "pose": "Unspecified",
-                "truncated": 1,
-                "difficult": 1
-            },
-            {
-                "bbox": [
-                    147.0,
-                    16.0,
-                    27.0,
-                    37.0
-                ],
-                "category": "cat",
-                "pose": "Frontal",
-                "truncated": 1,
-                "difficult": 0
-            }
-        ]
+class KeyPointLocalObject(Struct):
+    __params__ = ["cdom0"]
+    __fields__ = {
+        "num_keypoints": Int(),
+        "keypoints": Keypoint(dom="$cdom0")
     }
 
-    validate(data, schema, format_checker=FormatChecker())
+    __optional__ = ["num_keypoints"]
+
+
+class KeyPointSample(Struct):
+    __params__ = ["cdom0"]
+    __fields__ = {
+        "media": Image(),
+        "source": Str(),
+        "type": Str(),
+        "height": Int(),
+        "width": Int(),
+        "annotations": List(ele_type=KeyPointLocalObject(cdom0="$cdom0"))
+    }
+
+
+data = {"media": "media/000000000000.jpg", "source": "val2017/000000210273.jpg", "type": "image", "height": 428,
+        "width": 640,
+        "annotations": [{"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]},
+                        {"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]},
+                        {"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]},
+                        {"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]},
+                        {"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]},
+                        {"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]},
+                        {"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]},
+                        {"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]},
+                        {"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]},
+                        {"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]},
+                        {"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]},
+                        {"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]},
+                        {"num_keypoints": 0,
+                         "keypoints": [[0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0], [0.0, 0.0, 0],
+                                       [0.0, 0.0, 0]]}]}
+
+from objectio import LocalFileReader
+
+reader = LocalFileReader(working_dir="the/media/dir")
+
+sample_type = KeyPointSample(cdom0="KeyPoint_person_ClassDom")
+sample_type.set_file_reader(reader)
+sample_type.set_lazy_init(True)
+sample = sample_type(data)
+print(sample_type._FLATTEN_STRUCT)
+print(sample.annotations[0].num_keypoints)
