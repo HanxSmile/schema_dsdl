@@ -1,5 +1,5 @@
 from copy import deepcopy
-from jsonschema import validate, FormatChecker
+from jsonschema import validate, FormatChecker, Draft7Validator
 from geometry import GEOMETRY, CLASSDOMAIN, PlaceHolder
 from typing import Union, List as List_
 
@@ -48,7 +48,7 @@ class BaseField:
 
     @staticmethod
     def validate_schema(data, schema):
-        validate(data, schema, format_checker=FormatChecker())
+        validate(data, schema, format_checker=FormatChecker(), cls=Draft7Validator)
 
     def validate_all_schema(self, value):
         all_data = {"value": value, "args": self.kwargs}
