@@ -71,6 +71,9 @@ class BaseField:
         field_cls_name = cls.__name__
         return "$" + field_cls_name.lower()
 
+    def __call__(self, value):
+        return self.validate(value)
+
 
 class BaseFieldWithDomain(BaseField):
     _single_dom_schema = {"oneOf": [
