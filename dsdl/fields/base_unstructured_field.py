@@ -1,5 +1,5 @@
 from .base_field import BaseField, BaseFieldWithDomain
-from geometry import GEOMETRY
+from dsdl.geometry import GEOMETRY
 
 
 class UnstructuredObjectField(BaseField):

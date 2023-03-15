@@ -1,6 +1,6 @@
-from geometry.registry import CLASSDOMAIN, LABEL
-from geometry.label import Label
-from geometry.class_domain_attributes import Skeleton
+from dsdl.geometry.registry import CLASSDOMAIN, LABEL
+from dsdl.geometry.label import Label
+from dsdl.geometry.class_domain_attributes import Skeleton
 from jsonschema import validate, FormatChecker
 
 CLASSDOMAIN_ATTRIBUTES = {

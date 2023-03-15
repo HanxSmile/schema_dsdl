@@ -1,11 +1,11 @@
-from geometry import PlaceHolder, STRUCT
+from dsdl.geometry import PlaceHolder, STRUCT
 from copy import deepcopy
 from fnmatch import translate
 from .base_field import BaseField
 import os
 import re
-from exception import ValidationError
-from warning import FieldNotFoundWarning
+from dsdl.exception import ValidationError
+from dsdl.warning import FieldNotFoundWarning
 
 
 def _is_magic(p):
@@ -209,7 +209,7 @@ class Struct(object, metaclass=StructMetaclass):
                     flatten_dic["$field_mapping"][path] = item
                 else:
                     path = f"{pre_path}/{key_name}"
-                    _helper(item.ele_type, path, "*", flatten_dic)
+                    _helper(item.etype, path, "*", flatten_dic)
             elif isinstance(item, Struct):
                 path = f"{pre_path}/{key_name}"
                 this_mapping = item.get_mapping()

@@ -1,10 +1,21 @@
 from copy import deepcopy
-from jsonschema import validate, FormatChecker, Draft7Validator
-from geometry import GEOMETRY, CLASSDOMAIN, PlaceHolder
+from jsonschema import validate, FormatChecker, Draft7Validator, ValidationError, SchemaError
+from dsdl.geometry import GEOMETRY, CLASSDOMAIN, PlaceHolder, FIELD
 from typing import Union, List as List_
 
 
-class BaseField:
+class FieldMeta(type):
+    def __new__(mcs, name, bases, attributes):
+        super_new = super().__new__
+        parents = [b for b in bases if isinstance(b, FieldMeta)]
+        if not parents:
+            return super_new(mcs, name, bases, attributes)
+        new_cls = super_new(mcs, name, bases, attributes)
+        FIELD.register(name, new_cls)
+        return new_cls
+
+
+class BaseField(metaclass=FieldMeta):
     data_schema = {}
     args_schema = {
         "type": "object",
@@ -20,15 +31,15 @@ class BaseField:
         self.validate_schema(all_kwargs, self.args_schema)
         self.kwargs = all_kwargs
 
-    @classmethod
-    def get_schema(cls, **kwargs):
-        schema = deepcopy(cls.data_schema)
-        default_args = deepcopy(cls.default_args)
-        default_args.update(kwargs)
-
-        cls.validate_schema(default_args, cls.args_schema)
-        schema["dsdl_args"] = default_args
-        return schema
+    # @classmethod
+    # def get_schema(cls, **kwargs):
+    #     schema = deepcopy(cls.data_schema)
+    #     default_args = deepcopy(cls.default_args)
+    #     default_args.update(kwargs)
+    #
+    #     cls.validate_schema(default_args, cls.args_schema)
+    #     schema["dsdl_args"] = default_args
+    #     return schema
 
     def additional_validate(self, value):
         return value
@@ -46,9 +57,14 @@ class BaseField:
         }
         return default_all_schema or all_schema
 
-    @staticmethod
-    def validate_schema(data, schema):
-        validate(data, schema, format_checker=FormatChecker(), cls=Draft7Validator)
+    def validate_schema(self, data, schema):
+        try:
+            validate(data, schema, format_checker=FormatChecker(), cls=Draft7Validator)
+        except SchemaError as e:
+            raise SchemaError(f"SchemaError in {self.extract_key()[1:].capitalize()} field: \n  Schema is {schema}.\n  `{e}`")
+        except ValidationError as e:
+            raise ValidationError(
+                f"ValidationError in {self.extract_key()[1:].capitalize()} field: \n  Schema is {schema}. \n  Data is {data}.\n  `{e}`")
 
     def validate_all_schema(self, value):
         all_data = {"value": value, "args": self.kwargs}
@@ -149,16 +165,16 @@ class List(BaseField):
         "required": ["ordered"]
     }
 
-    def __init__(self, ele_type, **kwargs):
+    def __init__(self, etype, **kwargs):
         super().__init__(**kwargs)
-        self.ele_type = ele_type
+        self.etype = etype
         self.namespace = None
 
     def set_namespace(self, struct_obj):
         self.namespace = struct_obj
-        if hasattr(self.ele_type, "set_namespace"):
-            self.ele_type.set_namespace(struct_obj)
+        if hasattr(self.etype, "set_namespace"):
+            self.etype.set_namespace(struct_obj)
 
     def validate(self, value):
-        res = [self.ele_type.validate(item) for item in value]
+        res = [self.etype.validate(item) for item in value]
         return res

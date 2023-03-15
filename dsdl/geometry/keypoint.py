@@ -1,7 +1,7 @@
 from .label import Label
 from .classdomain import ClassDomainMeta
 from .base_geometry import BaseGeometry
-from exception import ClassNotFoundError
+from dsdl.exception import ClassNotFoundError
 from PIL import ImageDraw
 import numpy as np
 from typing import List, Union

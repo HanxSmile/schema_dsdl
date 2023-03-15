@@ -1,6 +1,6 @@
 from .base_field import BaseField, BaseFieldWithDomain
 from datetime import date, time
-from geometry import LABEL
+from dsdl.geometry import LABEL
 
 
 class Coord(BaseField):

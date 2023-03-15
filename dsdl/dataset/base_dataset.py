@@ -12,10 +12,10 @@ except ImportError:
 
         def __getitem__(self, item):
             pass
-from fields import Struct
-from geometry import STRUCT
-from dataset.utils import Util
-import objectio
+from dsdl.fields import Struct
+from dsdl.geometry import STRUCT
+from dsdl.dataset.utils import Util
+import dsdl.objectio as objectio
 from typing import List, Dict, Any, Callable, Optional, Union
 
 try:

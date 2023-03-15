@@ -5,7 +5,7 @@ from .polygon import Polygon, PolygonItem
 from .segmap import SegmentationMap
 from .insmap import InstanceMap
 from .keypoint import Coord2D, KeyPoints
-from .registry import STRUCT, CLASSDOMAIN, LABEL, GEOMETRY, FILEREADER
+from .registry import STRUCT, CLASSDOMAIN, LABEL, GEOMETRY, FILEREADER, FIELD
 from .text import Text
 from .rotate_box import RBBox
 from .shape import Shape, ImageShape
@@ -29,6 +29,7 @@ __all__ = [
     "FILEREADER",
     "LABEL",
     "GEOMETRY",
+    "FIELD",
     "KeyPoints",
     "RBBox",
     "Shape",
