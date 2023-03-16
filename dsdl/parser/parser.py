@@ -15,9 +15,9 @@ from abc import ABC, abstractmethod
 from typing import Optional, Set, Dict,Union
 from typing import List as _List
 
-from petrel_client.client import Client
-conf_path = '~/petreloss.conf'
-client = Client(conf_path)
+# from petrel_client.client import Client
+# conf_path = '~/petreloss.conf'
+# client = Client(conf_path)
 
 from .utils import *
 from .parse_field import EleStruct, ParserField
@@ -114,12 +114,8 @@ class DSDLParser(Parser, ABC):
         """
         ########################################################################################
         # 1. 校验train.yaml文件中必需的字段
-        if data_file.startswith('s3:'):
-            f = client.get(data_file)
+        with open(data_file, "r") as f:
             desc = yaml_load(f, Loader=YAMLSafeLoader)
-        else:
-            with open(data_file, "r") as f:
-                desc = yaml_load(f, Loader=YAMLSafeLoader)
 
         # 校验必须有meta和$dsdl-version字段，见白皮书2.1
         try:
@@ -180,7 +176,7 @@ class DSDLParser(Parser, ABC):
                 for p in _import:
                     # ceph仅能读取绝对路径，使用normpath和replace来规范
                     temp_p = os.path.normpath(os.path.join(library_path, p.strip() + ".yaml")).replace('s3:/','s3://')
-                    if os.path.exists(temp_p) or (temp_p.startswith('s3://') and client.contains(temp_p)):
+                    if os.path.exists(temp_p):
                             import_list.append(temp_p)
                     else:
                         err_msg = (
@@ -197,12 +193,12 @@ class DSDLParser(Parser, ABC):
                 library_path = os.path.dirname(data_file)
                 for p in _import:
                     temp_p = os.path.normpath(os.path.join(library_path, p.strip() + ".yaml")).replace('s3:/','s3://')
-                    if os.path.exists(temp_p) or (temp_p.startswith('s3://') and client.contains(temp_p)):
+                    if os.path.exists(temp_p):
                         import_list.append(temp_p)
                     else:
                         temp_p = os.path.normpath(os.path.join(library_path+'/../defs/', p.strip() + ".yaml")).replace('s3:/','s3://')
                         print("temp_p:",temp_p)
-                        if os.path.exists(temp_p) or (temp_p.startswith('s3://') and client.contains(temp_p)):
+                        if os.path.exists(temp_p):
                             import_list.append(temp_p)
                         else:
                             err_msg = (
@@ -227,12 +223,8 @@ class DSDLParser(Parser, ABC):
 
         import_desc = dict()
         for input_file in import_list:
-            if input_file.startswith('s3:'):
-                f = client.get(input_file)
+            with open(input_file, "r") as f:
                 import_desc.update(yaml_load(f, Loader=YAMLSafeLoader))
-            else:
-                with open(input_file, "r") as f:
-                    import_desc.update(yaml_load(f, Loader=YAMLSafeLoader))
 
         if "defs" in import_desc:
             # 获取yaml中模型（struct）和标签(label)部分的内容，存储在变量class_defi中，
@@ -546,54 +538,45 @@ def parse(dsdl_yaml: str, dsdl_library_path: str = None):
     output_file = os.path.join(os.path.dirname(dsdl_yaml), f"{dsdl_name}.py")
     dsdl_parse(dsdl_yaml, dsdl_library_path, output_file)
 
-if __name__ == '__main__':
-    # parse()
+# if __name__ == '__main__':
+#     # parse()
 
-    # # 遍历方式获取dsdl数据集
-    url = 's3://odl-dsdl/dsdl/'
-    contents = client.list(url)
-    ann_files = []
-    for content in contents:
-        if content.endswith('/'):
-            for content1 in client.list(url+content):
-                if content1.startswith('set'):
-                    for content2 in client.list(url+content+content1):
-                        if content2.endswith('yaml'):
-                            ann_files.append(url+content+content1+content2)
-                            # break
-                    # break
-        else:
-            print('object:', content)
-    # ann_files = open('new_parser/fail_parser.txt','r').readlines()
-    # ann_files = ['s3://odl-dsdl/dsdl/DIOR_RotDet_full/set-test/rotated_test.yaml']
-    print(f'dsdl数据集共{len(ann_files)}个')
-    ff = open('./new_parser/fail_parser.txt','w')
-    for i,ann_file in enumerate(ann_files):
-        dataset = ann_file.split('/')[4]
-        taskname = dataset.split('_')[-2]
-        datasetname = '_'.join(dataset.split('_')[:-2])
-        unique_name = ann_file.split('/')[-1].split('.')[0]
-        try:
-            dsdl_py = dsdl_parse(ann_file, dsdl_library_path=None,output_file=f'./new_parser/data/dsdl_new/{taskname}_{datasetname}_{unique_name}_new.py',report_flag=True)
-            exec(dsdl_py)
-            print('-----------------',i,dataset, 'exec success!')
+#     # # 遍历方式获取dsdl数据集
+#     url = 's3://odl-dsdl/dsdl/'
+#     contents = client.list(url)
+#     ann_files = []
+#     for content in contents:
+#         if content.endswith('/'):
+#             for content1 in client.list(url+content):
+#                 if content1.startswith('set'):
+#                     for content2 in client.list(url+content+content1):
+#                         if content2.endswith('yaml'):
+#                             ann_files.append(url+content+content1+content2)
+#                             # break
+#                     # break
+#         else:
+#             print('object:', content)
+#     # ann_files = open('new_parser/fail_parser.txt','r').readlines()
+#     # ann_files = ['s3://odl-dsdl/dsdl/DIOR_RotDet_full/set-test/rotated_test.yaml']
+#     print(f'dsdl数据集共{len(ann_files)}个')
+#     ff = open('./new_parser/fail_parser.txt','w')
+#     for i,ann_file in enumerate(ann_files):
+#         dataset = ann_file.split('/')[4]
+#         taskname = dataset.split('_')[-2]
+#         datasetname = '_'.join(dataset.split('_')[:-2])
+#         unique_name = ann_file.split('/')[-1].split('.')[0]
+#         try:
+#             dsdl_py = dsdl_parse(ann_file, dsdl_library_path=None,output_file=f'./new_parser/data/dsdl_new/{taskname}_{datasetname}_{unique_name}_new.py',report_flag=True)
+#             exec(dsdl_py)
+#             print('-----------------',i,dataset, 'exec success!')
 
-            # dsdl_py = new_parse(ann_file, dsdl_library_path=os.path.dirname(ann_file),output_file=f'./new_parser/data/dsdl_new/{dataset}_new.py',report_flag=True)
-            # exec(dsdl_py)
-            # print('-----------------',i,dataset, 'exec success!')
-        except:
-            # try: 
-            #     a
-            #     dsdl_py = new_parse(ann_file, dsdl_library_path=os.path.dirname(ann_file)+'/../defs/',output_file=f'./new_parser/data/dsdl_new/{dataset}_new.py',report_flag=True)
-            #     exec(dsdl_py)
-            #     print('-----------------',i,dataset, 'exec success!')
-            # except:
-            print (traceback.format_exc ())
-            print('-----------------',i,dataset, 'parser fail!', ann_file)
+#         except:
+#             print (traceback.format_exc ())
+#             print('-----------------',i,dataset, 'parser fail!', ann_file)
 
-            ff.write(ann_file+'\n')
-            ff.flush()
-    ff.close()
+#             ff.write(ann_file+'\n')
+#             ff.flush()
+#     ff.close()
 
 # 
 
