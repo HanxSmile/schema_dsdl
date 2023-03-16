@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Optional, Set, Dict
 from typing import List as _List
 
-# ÏÈµ¼Èëdsdl.fieldsÕâÀïFIELD²Å¿ÉÒÔÉúĞ§
+# å…ˆå¯¼å…¥dsdl.fieldsè¿™é‡ŒFIELDæ‰å¯ä»¥ç”Ÿæ•ˆ
 from dsdl.fields import *
 from dsdl.geometry import FIELD
 from dsdl.exception import DefineSyntaxError
@@ -21,15 +21,15 @@ class ParserField():
                     struct_name_params: Dict,
                     struct_name: Set[str], 
                     struct_params: str = None):
-        self.struct_name_params = struct_name_params # ËùÓĞstruct¼°params£¬ºóĞøĞ£ÑécdomÓÃ
-        self.struct = struct_name  # field ÖĞ°üº¬µÄstruct£¬ºóĞøĞ£ÑéÓÃ
+        self.struct_name_params = struct_name_params # æ‰€æœ‰structåŠparamsï¼Œåç»­æ ¡éªŒcdomç”¨
+        self.struct = struct_name  # field ä¸­åŒ…å«çš„structï¼Œåç»­æ ¡éªŒç”¨
         self.struct_params = struct_params
     
     def pre_parse_struct_field(
         self, field_name: Optional[str], raw_field_type: str
     ) -> str:
         """
-        Ğ£ÑéstructÀàĞÍµÄÃ¿¸ö×Ö¶ÎµÄÈë¿Úº¯Êı£¬¶Ô²»Í¬Çé¿ö£¨Int,Image,List...£©µÄ×Ö¶Î½øĞĞĞ£Ñé²¢¶ÁÈëÄÚ´æ¡£
+        æ ¡éªŒstructç±»å‹çš„æ¯ä¸ªå­—æ®µçš„å…¥å£å‡½æ•°ï¼Œå¯¹ä¸åŒæƒ…å†µï¼ˆInt,Image,List...ï¼‰çš„å­—æ®µè¿›è¡Œæ ¡éªŒå¹¶è¯»å…¥å†…å­˜ã€‚
             field_name: like: "category_id", "category", "annotation", None, ....
             raw_field_type: like: Int, Label[dom=$cdom0], List[List[Int], ordered = True], 'dom=$cdom0', ....
         """
@@ -43,7 +43,7 @@ class ParserField():
             k_v_list_ori = fixed_params[0]
             raplace_field_type = raw_field_type.replace("[" + k_v_list_ori + "]", "")
             # below can split 'etype=LocalObjectEntry[cdom=COCO2017ClassDom, optional=True], optional=True' to
-            # ['etype=LocalObjectEntry[cdom=COCO2017ClassDom', 'optional=True]', 'optional=True'],±£³ÖÔ­ÓĞË³Ğò
+            # ['etype=LocalObjectEntry[cdom=COCO2017ClassDom', 'optional=True]', 'optional=True'],ä¿æŒåŸæœ‰é¡ºåº
             k_v_list_ori = re.split(r",\s*(?![^\[]*\])", k_v_list_ori)
             k_v_list = list(set([i.strip() for i in k_v_list_ori]))
             k_v_list.sort(key = k_v_list_ori.index)
@@ -56,7 +56,7 @@ class ParserField():
                         f"Error in field with value of `{raw_field_type}`. Check the `{k_v}` part."
                     )
                 if raplace_field_type in self.struct:
-                    # ÅĞ¶Ïcdom,ºÍµ÷ÓÃstructµÄparams¶ÔÓ¦
+                    # åˆ¤æ–­cdom,å’Œè°ƒç”¨structçš„paramså¯¹åº”
                     k =  k_v.split('=')[0]
                     if k in self.struct_name_params[raplace_field_type]:
                         
@@ -64,7 +64,7 @@ class ParserField():
                             raise DefineSyntaxError( f"{k_v} is {raplace_field_type} params, should have '='")
                         cdom_name =  k_v.split('=')[1] 
                 
-                        # Ğ£Ñécdom_nameÊÇ·ñ·ûºÏ¶¨Òå
+                        # æ ¡éªŒcdom_nameæ˜¯å¦ç¬¦åˆå®šä¹‰
                         if cdom_name.replace('$','') not in self.struct_params:
                             raise DefineSyntaxError(
                                     f"definition error of dom '{cdom_name}' not in $params `{self.struct_params}`, "
@@ -97,21 +97,21 @@ class ParserField():
         param_list: _List[str] = None,
         ) -> str:
         """
-        Ğ£Ñé¾ßÌåtype²¢ĞÎ³É.pyĞèÒª¸ñÊ½¡£
+        æ ¡éªŒå…·ä½“typeå¹¶å½¢æˆ.pyéœ€è¦æ ¼å¼ã€‚
         field_type: like: Int, Label, List,  'dom=$cdom0', ....
         param_list: like: None, ['dom=$cdom0'], ['List[Int]', 'ordered = True'], None, ....
         """
         if field_type.startswith('List'):
             field_type = self.parse_list_field(field_type,param_list)
             return field_type
-        # ·ÇList¿ªÍ·£¬ÔİÊ±²»¿¼ÂÇÇ¶Ì×µÄÇé¿ö
+        # éListå¼€å¤´ï¼Œæš‚æ—¶ä¸è€ƒè™‘åµŒå¥—çš„æƒ…å†µ
         else:
             params_str = ''
             # eg. optional=True, cdom=$cdom, BBox,
-            # -------------------------------------------------------------ÕâÀïÒÔfieldlistÀ´ÅĞ¶Ï,²¢Ìí¼Ó¸ñÊ½ÅĞ¶Ï
+            # -------------------------------------------------------------è¿™é‡Œä»¥fieldlistæ¥åˆ¤æ–­,å¹¶æ·»åŠ æ ¼å¼åˆ¤æ–­
             if field_type in FIELD or field_type in self.struct:
                 check_name_format(field_type)
-                # ¼ÆËãparam
+                # è®¡ç®—param
                 if param_list:
                     for param in param_list:
                         # eg. optional=True, cdom=$cdom, BBox, NewType[is_optional=True]
@@ -135,11 +135,11 @@ class ParserField():
                          param_list: _List[str]
                          ) -> str:
         """
-        ½âÎö´¦ÀíListÀàĞÍµÄfield
+        è§£æå¤„ç†Listç±»å‹çš„field
         """
         # field_type:List
         # param_list:[etype=KeyPointLocalObject[cdom0=$cdom0],ordered=True] or Bbox
-        # ÕâÀï²»½øĞĞetypeÊ¶±ğ£¬ÓĞÊ²Ã´×ªÊ²Ã´,Ê¶±ğµ½µÄstructĞèÒªÏÔÊ½¶¨ÒåÎªetype=xxx
+        # è¿™é‡Œä¸è¿›è¡Œetypeè¯†åˆ«ï¼Œæœ‰ä»€ä¹ˆè½¬ä»€ä¹ˆ,è¯†åˆ«åˆ°çš„structéœ€è¦æ˜¾å¼å®šä¹‰ä¸ºetype=xxx
         res = field_type + "("
         if param_list:
             for param in param_list:
