@@ -122,6 +122,11 @@ class ParserField():
             else:
                 if param_list:
                     raise DefineSyntaxError(f'definition error of {field_type} has {param_list}, please check field ')
+                
+                if field_type.split('=')[-1]=='true':
+                    field_type = field_type.replace(field_type.split('=')[-1],'True')
+                if field_type.split('=')[-1]=='false':
+                    field_type = field_type.replace(field_type.split('=')[-1],'False')
                 return field_type
             
 
@@ -145,7 +150,7 @@ class ParserField():
                     ele_type = param.split("=",1)[1].strip()
 
                     ele_type = self.pre_parse_struct_field(field_name=None, raw_field_type=ele_type)
-                    res += (ele_type_name, "=" + ele_type + ',')
+                    res += (ele_type_name + "=" + ele_type + ',')
                 else:
                     ele_type = self.pre_parse_struct_field(field_name=None, raw_field_type=param)
                     res += (ele_type+ ',')
